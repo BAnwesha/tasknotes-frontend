@@ -1,16 +1,108 @@
-# React + Vite
+# TaskNotes Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React single-page application for managing tasks and notes, with drag-and-drop reordering, tag filtering, full-text search, and dark mode.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Layer | Technology |
+|---|---|
+| Framework | React 18 |
+| Build Tool | Vite |
+| Routing | React Router v6 |
+| HTTP Client | Axios |
+| Drag and Drop | @hello-pangea/dnd |
+| Styling | CSS Modules |
+| State | React Context + useState |
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- JWT authentication with protected and public routes
+- Create, edit, delete tasks and notes
+- Tab-based view — switch between tasks and notes
+- Priority badges (HIGH / MEDIUM / LOW) with color coding
+- Due date tracking with overdue detection
+- Tag filtering via chip buttons
+- Real-time client-side search
+- Drag-and-drop reordering (persisted to backend)
+- Dark mode with CSS variable theming
+- Completion toggle with strikethrough animation
+- Stats bar showing task count and completion rate
 
-## Expanding the ESLint configuration
+## Project Structure
+src/
+├── api/
+│   ├── axiosClient.js      # Axios instance with request/response interceptors
+│   ├── auth.api.js         # Login, register
+│   └── items.api.js        # Full CRUD + reorder
+├── components/
+│   ├── Navbar.jsx          # Logo, dark mode toggle, logout
+│   ├── ItemCard.jsx        # Task/note card with priority border
+│   └── ItemModal.jsx       # Create/edit modal form
+├── hooks/
+│   └── useItems.js         # Data fetching and state management
+├── pages/
+│   ├── LoginPage.jsx
+│   ├── RegisterPage.jsx
+│   └── DashboardPage.jsx   # Main view with tabs, search, drag-drop
+├── store/
+│   └── authStore.jsx       # Auth context — user, token, login, logout
+└── styles/
+└── theme.css           # CSS variables for light and dark mode
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- TaskNotes API running on `http://localhost:8080`
+
+### Install and run
+
+```bash
+npm install
+npm run dev
+```
+
+App runs on `http://localhost:5173`
+
+### Build for production
+
+```bash
+npm run build
+```
+
+## Auth Flow
+User submits login form
+→ POST /api/auth/login
+→ Token stored in localStorage
+→ Axios interceptor attaches token to all future requests
+→ ProtectedRoute allows access to dashboard
+→ On 401 response, interceptor clears token and redirects to login
+
+## Key Design Decisions
+
+**Single Axios instance with interceptors** — the request interceptor automatically attaches the JWT Bearer token to every outgoing request. The response interceptor globally handles 401 errors by clearing the session and redirecting to login — no component needs to handle token expiry manually.
+
+**Client-side filtering** — search and tag filtering happen entirely in the browser using `useMemo`. This avoids unnecessary API calls for every keystroke and keeps the UI instant. The full item list is fetched once on mount.
+
+**Optimistic state updates** — after create, update, delete, and toggle operations, the local state is updated immediately using the server's response rather than re-fetching the full list. This makes every action feel instant.
+
+**CSS variables for dark mode** — all colors are defined as CSS custom properties on `:root` and overridden under `[data-theme='dark']`. Toggling dark mode sets a single attribute on `<html>` and the entire app repaints with no JavaScript color logic.
+
+**`useItems` custom hook** — all item state, fetching, and mutations live in one hook. Dashboard stays clean and only calls the hook to get data and action functions. If items were needed elsewhere, the same hook could be reused without duplication.
+
+## Environment
+
+The API base URL is set in `axiosClient.js`:
+
+```javascript
+baseURL: 'http://localhost:8080/api'
+```
+
+For production, replace this with your deployed API URL or use a `.env` file:
+VITE_API_URL=https://your-api.com/api
+
+Then update `axiosClient.js`:
+```javascript
+baseURL: import.meta.env.VITE_API_URL
+```
